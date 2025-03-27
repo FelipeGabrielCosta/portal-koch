@@ -1,0 +1,14 @@
+# Backend
+backend/.env
+backend/uploads/*
+!backend/uploads/.gitkeep
+backend/node_modules/
+
+# Frontend
+dist/assets/uploads/
+node_modules/
+
+# Sistema
+.DS_Store
+*.log
+*.env

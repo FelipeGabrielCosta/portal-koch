@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal Koch - Criar Animação</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="header">
+        <img src="assets/logo-koch.png" alt="Logo Koch" class="logo">
+        <div class="menu">
+            <button class="menu-button" id="menu-projetos">Menu</button>
+            <div class="submenu">
+                <a href="verProjetos.html" id="ver-projetos">Ver Projetos</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="content">
+        <h1>Fazer Animação</h1>
+
+        <div class="form-group">
+            <label for="titulo">Título do Projeto:</label>
+            <input type="text" id="titulo" placeholder="Digite o título" required>
+        </div>
+
+        <div class="form-group">
+            <label for="quantidade">Quantidade de Produtos (1 a 3):</label>
+            <input type="number" id="quantidade" min="1" max="3" value="1" required>
+        </div>
+
+        <div id="skus-container">
+            <!-- Campos de SKU serão gerados dinamicamente -->
+        </div>
+
+        <button id="adicionar-sku">Adicionar Produto</button>
+        <button id="fazer-animacao">Fazer Animação</button>
+
+        <div id="lista-projetos" style="display:none;"></div>
+    </div>
+
+    <div class="footer">
+        <p>Supermercado Koch © <span id="ano"></span> | Desenvolvido por Felipe Gabriel</p>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

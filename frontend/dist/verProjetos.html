@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal Koch - Projetos Salvos</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
+</head>
+<body>
+    <div class="header">
+        <img src="assets/logo-koch.png" alt="Logo Koch" class="logo">
+        <div class="header-actions">
+            <a href="index.html" class="back-button">← Voltar</a>
+            <button id="atualizar-projetos" class="refresh-button">Atualizar</button>
+        </div>
+    </div>
+
+    <div class="content">
+        <div class="page-header">
+            <h1>Projetos Salvos</h1>
+            <div class="search-container">
+                <input type="text" id="busca-projetos" placeholder="Buscar projetos...">
+            </div>
+        </div>
+        
+        <div id="loading-message" class="loading">
+            <div class="spinner"></div>
+            <p>Carregando projetos...</p>
+        </div>
+        
+        <div id="lista-projetos" class="projetos-container">
+            <!-- Projetos serão carregados aqui via JavaScript -->
+        </div>
+        
+        <div id="no-projects-message" class="no-projects" style="display: none;">
+            <p>Nenhum projeto encontrado.</p>
+            <a href="index.html" class="create-button">Criar novo projeto</a>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>Supermercado Koch © <span id="ano"></span> | Desenvolvido por Felipe Gabriel</p>
+    </div>
+
+    <script src="verProjetos.js"></script>
+</body>
+</html>
