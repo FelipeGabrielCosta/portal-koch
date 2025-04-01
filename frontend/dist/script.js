@@ -1,244 +1,266 @@
-require('dotenv').config();
-const express = require('express');
-const axios = require('axios');
-const { JSDOM } = require('jsdom');
-const cors = require('cors');
-const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
-const rateLimit = require('express-rate-limit');
-
-const app = express();
-
-// Configurações básicas de segurança e performance
-app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? process.env.ALLOWED_ORIGINS.split(',') 
-    : '*'
-}));
-app.use(express.json({ limit: '10kb' }));
-app.use(express.urlencoded({ extended: true, limit: '10kb' }));
-
-// Rate limiting para evitar abuso
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 100 // limite de 100 requisições por IP
-});
-app.use('/api/', limiter);
-
-// Configurações do servidor
-const PORT = process.env.PORT || 3000;
-const UPLOADS_DIR = path.join(__dirname, 'uploads');
-
-// Garante que a pasta de uploads existe
-if (!fs.existsSync(UPLOADS_DIR)) {
-  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
-}
-
-// Configuração segura do Multer
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, UPLOADS_DIR),
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
-  }
-});
-
-const fileFilter = (req, file, cb) => {
-  const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
-  if (allowedTypes.includes(file.mimetype)) {
-    cb(null, true);
-  } else {
-    cb(new Error('Tipo de arquivo não suportado. Apenas imagens são permitidas.'), false);
-  }
-};
-
-const upload = multer({ 
-  storage,
-  fileFilter,
-  limits: {
-    fileSize: 5 * 1024 * 1024 // 5MB
-  }
-});
-
-// Cache de produtos
-const productCache = new Map();
-const CACHE_TTL = 60 * 60 * 1000; // 1 hora
-
-// Banco de dados em memória
-const projetos = {};
-
-// URLs dos produtos
-const PRODUCT_URLS = {
-  '9737': 'https://www.superkoch.com.br/detergente-ype-clear-frasco-500ml-9737',
-  '72829': 'https://www.superkoch.com.br/amaciante-de-roupas-concentrado-downy-frescor-da-primavera-1l-72829',
-  '5465': 'https://www.superkoch.com.br/agua-sanitaria-ype-frasco-2l-5465',
-};
-
-// Middleware de logging
-app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
-  next();
-});
-
-// Rotas da API
-const apiRouter = express.Router();
-app.use('/api', apiRouter);
-
-// Upload de imagens
-apiRouter.post('/upload', upload.single('imagem'), (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ 
-      success: false,
-      error: 'Nenhuma imagem enviada ou tipo não suportado' 
-    });
-  }
+document.addEventListener('DOMContentLoaded', function() {
+  const API_URL = 'http://localhost:3000';
+  const tituloInput = document.getElementById('titulo');
+  const quantidadeInput = document.getElementById('quantidade');
+  const skusContainer = document.getElementById('skus-container');
+  const adicionarSkuBtn = document.getElementById('adicionar-sku');
   
-  res.json({ 
-    success: true,
-    path: `/uploads/${req.file.filename}`,
-    filename: req.file.filename
-  });
-});
-
-// Busca de produtos
-apiRouter.post('/produtos', async (req, res) => {
-  try {
-    const { skus } = req.body;
-    
-    if (!skus || !Array.isArray(skus)) {
-      return res.status(400).json({
-        success: false,
-        error: 'Lista de SKUs inválida'
-      });
-    }
-
-    const results = await Promise.allSettled(
-      skus.map(sku => fetchProductData(sku))
-    );
-
-    const successful = results.filter(r => r.status === 'fulfilled').map(r => r.value);
-    const failed = results.filter(r => r.status === 'rejected').map(r => r.reason.message);
-
-    if (successful.length === 0) {
-      return res.status(404).json({
-        success: false,
-        error: 'Nenhum produto encontrado',
-        details: failed
-      });
-    }
-
-    res.json({
-      success: true,
-      data: {
-        produtos: successful,
-        descricoes: successful.map(p => p.descricao),
-        precos: successful.map(p => p.preco)
-      },
-      errors: failed.length > 0 ? failed : undefined
-    });
-
-  } catch (error) {
-    console.error('Erro ao buscar produtos:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Erro interno ao processar produtos'
-    });
-  }
-});
-
-// Gerenciamento de projetos
-apiRouter.post('/projetos', (req, res) => {
-  const { nome, imagens, descricoes, precos } = req.body;
+  // SKUs válidas
+  const VALID_SKUS = ['9737', '72829', '5465'];
   
-  if (!nome || !descricoes || !precos) {
-    return res.status(400).json({
-      success: false,
-      error: 'Dados do projeto incompletos'
-    });
-  }
-
-  projetos[nome] = { 
-    imagens: imagens || [],
-    descricoes,
-    precos,
-    data: new Date(),
-    lastUpdated: new Date()
+  const estado = {
+    produtos: [],
+    carregando: false
   };
 
-  res.json({ success: true });
-});
+  function showAlert(message, isSuccess = false) {
+    const alert = document.createElement('div');
+    alert.className = `alert ${isSuccess ? 'success' : ''}`;
+    
+    const icon = document.createElement('i');
+    icon.className = isSuccess ? 'fas fa-check-circle' : 'fas fa-exclamation-circle';
+    
+    const text = document.createElement('span');
+    text.textContent = message;
+    
+    alert.appendChild(icon);
+    alert.appendChild(text);
+    document.body.appendChild(alert);
+    
+    setTimeout(() => alert.classList.add('show'), 10);
+    
+    setTimeout(() => {
+      alert.classList.remove('show');
+      setTimeout(() => alert.remove(), 300);
+    }, 3000);
+  }
 
-apiRouter.get('/projetos', (req, res) => {
-  const sortedProjects = Object.entries(projetos)
-    .sort(([,a], [,b]) => b.data - a.data)
-    .reduce((acc, [key, val]) => ({ ...acc, [key]: val }), {});
-
-  res.json({
-    success: true,
-    data: sortedProjects
-  });
-});
-
-// Servir arquivos estáticos
-app.use('/uploads', express.static(UPLOADS_DIR));
-app.use(express.static(path.join(__dirname, '../dist')));
-
-// Rota para SPA
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../dist/index.html'));
-});
-
-// Middleware de erro
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({
-    success: false,
-    error: 'Algo deu errado!'
-  });
-});
-
-// Função auxiliar para buscar dados do produto
-async function fetchProductData(sku) {
-  // Verifica cache primeiro
-  if (productCache.has(sku)) {
-    const cached = productCache.get(sku);
-    if (Date.now() - cached.timestamp < CACHE_TTL) {
-      return cached.data;
+  function atualizarCamposSKU() {
+    let qtd = parseInt(quantidadeInput.value) || 1;
+    qtd = Math.max(1, Math.min(qtd, 3));
+    quantidadeInput.value = qtd;
+    skusContainer.innerHTML = '';
+    
+    // Adiciona informação sobre SKUs válidas
+    const skuInfo = document.createElement('div');
+    skuInfo.className = 'valid-skus';
+    skuInfo.innerHTML = `SKUs válidas: <span>${VALID_SKUS.join(', ')}</span>`;
+    skusContainer.appendChild(skuInfo);
+    
+    for (let i = 0; i < qtd; i++) {
+      const div = document.createElement('div');
+      div.className = 'form-group sku-group';
+      div.innerHTML = `
+        <label>SKU do Produto ${i+1}:</label>
+        <div style="display: flex; align-items: center;">
+          <input type="text" placeholder="Digite a SKU" class="produto-sku" required>
+          <div class="tooltip">ℹ️
+            <span class="tooltiptext">Digite uma das SKUs válidas: ${VALID_SKUS.join(', ')}</span>
+          </div>
+        </div>
+        <label>Imagem do Produto ${i+1}:</label>
+        <input type="file" accept="image/*" class="produto-imagem" required>
+        <div class="imagem-container">
+          <img class="imagem-preview" style="display:none;">
+          <div class="loading-imagem" style="display:none;">Comprimindo...</div>
+          <div class="error-imagem" style="display:none; color:red;"></div>
+        </div>
+      `;
+      skusContainer.appendChild(div);
     }
   }
 
-  const url = PRODUCT_URLS[sku];
-  if (!url) throw new Error(`SKU ${sku} não encontrada`);
+  async function fetchProductWithRetry(sku, retries = 3, delay = 1000) {
+    for (let i = 0; i < retries; i++) {
+      try {
+        const response = await fetch(`${API_URL}/api/produto/${sku}`);
+        
+        if (!response.ok) {
+          if (response.status === 404) {
+            throw new Error(`Produto com SKU ${sku} não encontrado`);
+          }
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (!data.success) {
+          throw new Error(data.error || 'Erro desconhecido na API');
+        }
+        
+        return data.data;
+      } catch (error) {
+        if (i === retries - 1) throw error;
+        await new Promise(resolve => setTimeout(resolve, delay * (i + 1)));
+      }
+    }
+  }
 
-  const { data } = await axios.get(url, {
-    timeout: 5000,
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
+  async function compressImage(file, maxWidth = 800, quality = 0.6) {
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        reject(new Error('Tempo excedido ao processar imagem'));
+      }, 15000);
+
+      const reader = new FileReader();
+      
+      reader.onload = function(event) {
+        clearTimeout(timeout);
+        const img = new Image();
+        img.onload = function() {
+          const canvas = document.createElement('canvas');
+          const scale = Math.min(maxWidth / img.width, 1);
+          canvas.width = img.width * scale;
+          canvas.height = img.height * scale;
+          
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          
+          canvas.toBlob(blob => {
+            if (!blob) {
+              reject(new Error('Erro ao comprimir imagem'));
+              return;
+            }
+            
+            const newReader = new FileReader();
+            newReader.onload = () => resolve(newReader.result);
+            newReader.onerror = () => reject(new Error('Erro ao ler imagem comprimida'));
+            newReader.readAsDataURL(blob);
+          }, 'image/jpeg', quality);
+        };
+        img.onerror = () => reject(new Error('Erro ao carregar imagem'));
+        img.src = event.target.result;
+      };
+      
+      reader.onerror = () => {
+        clearTimeout(timeout);
+        reject(new Error('Erro ao ler o arquivo'));
+      };
+      
+      reader.readAsDataURL(file);
+    });
+  }
+
+  quantidadeInput.addEventListener('input', atualizarCamposSKU);
+  quantidadeInput.addEventListener('change', function() {
+    if (this.value < 1) this.value = 1;
+    if (this.value > 3) this.value = 3;
+    atualizarCamposSKU();
+  });
+
+  adicionarSkuBtn.addEventListener('click', async function() {
+    if (estado.carregando) return;
+    
+    try {
+      estado.carregando = true;
+      adicionarSkuBtn.disabled = true;
+      adicionarSkuBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processando...';
+
+      const titulo = tituloInput.value.trim();
+      if (!titulo) throw new Error('Digite um título válido para o projeto!');
+
+      const skuInputs = document.querySelectorAll('.produto-sku');
+      const imagemInputs = document.querySelectorAll('.produto-imagem');
+      
+      if (skuInputs.length === 0) throw new Error('Selecione pelo menos um produto!');
+
+      estado.produtos = [];
+      const productsData = [];
+
+      for (let i = 0; i < skuInputs.length; i++) {
+        const sku = skuInputs[i].value.trim();
+        const imagemInput = imagemInputs[i];
+        const errorElement = imagemInput.nextElementSibling.querySelector('.error-imagem');
+        const loader = imagemInput.nextElementSibling.querySelector('.loading-imagem');
+        
+        errorElement.style.display = 'none';
+        loader.style.display = 'block';
+
+        try {
+          if (!sku) throw new Error(`Preencha a SKU do Produto ${i+1}!`);
+          
+          // Validação da SKU
+          if (!VALID_SKUS.includes(sku)) {
+            throw new Error(`SKU inválida! Use uma das seguintes: ${VALID_SKUS.join(', ')}`);
+          }
+          
+          if (!imagemInput.files[0]) throw new Error(`Adicione uma imagem para o Produto ${i+1}!`);
+          if (!imagemInput.files[0].type.match('image.*')) throw new Error('Tipo de arquivo inválido. Use apenas imagens.');
+
+          const produto = await fetchProductWithRetry(sku);
+          const imagemComprimida = await compressImage(imagemInput.files[0]);
+          
+          productsData.push({
+            ...produto,
+            imagem: imagemComprimida
+          });
+        } catch (error) {
+          errorElement.textContent = error.message;
+          errorElement.style.display = 'block';
+          throw error;
+        } finally {
+          loader.style.display = 'none';
+        }
+      }
+
+      const response = await fetch(`${API_URL}/api/projetos`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          nome: titulo,
+          produtos: productsData 
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erro ao salvar projeto');
+      }
+
+      showAlert('Produtos adicionados com sucesso!', true);
+      setTimeout(() => {
+        window.location.href = 'verProjetos.html';
+      }, 1500);
+    } catch (error) {
+      console.error('Erro:', error);
+      showAlert(`Erro: ${error.message}`);
+    } finally {
+      estado.carregando = false;
+      adicionarSkuBtn.disabled = false;
+      adicionarSkuBtn.innerHTML = '<i class="fas fa-plus-circle"></i> Adicionar Produto';
     }
   });
 
-  const dom = new JSDOM(data);
-  const doc = dom.window.document;
+  skusContainer.addEventListener('change', async function(e) {
+    if (e.target.classList.contains('produto-imagem') && e.target.files[0]) {
+      const file = e.target.files[0];
+      const container = e.target.nextElementSibling;
+      const preview = container.querySelector('.imagem-preview');
+      const loader = container.querySelector('.loading-imagem');
+      const errorElement = container.querySelector('.error-imagem');
+      
+      preview.style.display = 'none';
+      errorElement.style.display = 'none';
+      loader.style.display = 'block';
+      
+      try {
+        if (!file.type.match('image.*')) {
+          throw new Error('Tipo de arquivo inválido. Use apenas imagens.');
+        }
 
-  const descricao = doc.querySelector('span.base[data-ui-id="page-title-wrapper"]')?.textContent.trim();
-  const preco = doc.querySelector('span.price')?.textContent.trim();
-
-  if (!descricao || !preco) throw new Error('Dados do produto incompletos');
-
-  const result = { sku, descricao, preco };
-  
-  // Atualiza cache
-  productCache.set(sku, {
-    timestamp: Date.now(),
-    data: result
+        const compressedImage = await compressImage(file);
+        preview.src = compressedImage;
+        preview.style.display = 'block';
+      } catch (error) {
+        errorElement.textContent = error.message;
+        errorElement.style.display = 'block';
+        e.target.value = '';
+      } finally {
+        loader.style.display = 'none';
+      }
+    }
   });
 
-  return result;
-}
-
-// Inicia o servidor
-app.listen(PORT, () => {
-  console.log(`Servidor rodando na porta ${PORT}`);
-  console.log(`Modo: ${process.env.NODE_ENV || 'development'}`);
+  document.getElementById('ano').textContent = new Date().getFullYear();
+  atualizarCamposSKU();
 });

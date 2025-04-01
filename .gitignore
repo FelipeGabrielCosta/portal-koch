@@ -3,12 +3,33 @@ backend/.env
 backend/uploads/*
 !backend/uploads/.gitkeep
 backend/node_modules/
+backend/package-lock.json
 
 # Frontend
-dist/assets/uploads/
-node_modules/
+frontend/dist/
+frontend/node_modules/
+frontend/package-lock.json
 
 # Sistema
 .DS_Store
 *.log
 *.env
+.idea/
+.vscode/
+*.tmp
+*.bak
+*.swp
+*.swo
+*.sublime-workspace
+*.sublime-project
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnp*
+.pnp.js
+*.pid
+*.seed
+*.pid.lock
+*.pem
+*.cache
+.tern-port

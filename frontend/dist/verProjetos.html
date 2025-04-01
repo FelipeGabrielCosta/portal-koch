@@ -5,22 +5,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Portal Koch - Projetos Salvos</title>
     <link rel="stylesheet" href="styles.css">
-    <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
     <div class="header">
-        <img src="assets/logo-koch.png" alt="Logo Koch" class="logo">
-        <div class="header-actions">
-            <a href="index.html" class="back-button">← Voltar</a>
-            <button id="atualizar-projetos" class="refresh-button">Atualizar</button>
+        <div class="header-container">
+            <img src="assets/logo-koch.png" alt="Logo Koch" class="logo">
+            <div class="menu-container">
+                <button class="menu-button" id="menu-projetos">
+                    <i class="fas fa-bars"></i> Menu
+                </button>
+                <div class="dropdown-menu">
+                    <a href="index.html" class="menu-item">
+                        <i class="fas fa-plus-circle"></i> Criar Projeto
+                    </a>
+                </div>
+            </div>
         </div>
     </div>
 
     <div class="content">
         <div class="page-header">
-            <h1>Projetos Salvos</h1>
+            <h1>Meus Projetos</h1>
             <div class="search-container">
                 <input type="text" id="busca-projetos" placeholder="Buscar projetos...">
+                <i class="fas fa-search search-icon"></i>
             </div>
         </div>
         
@@ -30,12 +39,21 @@
         </div>
         
         <div id="lista-projetos" class="projetos-container">
-            <!-- Projetos serão carregados aqui via JavaScript -->
+            <!-- Projetos serão carregados dinamicamente aqui -->
         </div>
         
         <div id="no-projects-message" class="no-projects" style="display: none;">
-            <p>Nenhum projeto encontrado.</p>
-            <a href="index.html" class="create-button">Criar novo projeto</a>
+            <img src="assets/no-projects.svg" alt="Nenhum projeto" class="empty-state-img" width="150">
+            <p>Você ainda não tem projetos salvos</p>
+            <a href="index.html" class="create-button">
+                <i class="fas fa-plus"></i> Criar novo projeto
+            </a>
+        </div>
+
+        <div class="animation-controls">
+            <button id="fazer-animacao" disabled>
+                <i class="fas fa-film"></i> Gerar Animação
+            </button>
         </div>
     </div>
 
