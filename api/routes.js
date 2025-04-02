@@ -12,6 +12,17 @@ const app = express();
 const isVercel = process.env.VERCEL === '1';
 const PORT = process.env.PORT || 3000;
 
+// Configuração CORS
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+}));
+
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
 // Declaração única da variável DATA_FILE
 const DATA_FILE = (() => {
   if (isVercel) {
@@ -98,6 +109,7 @@ async function fetchProductData(sku) {
     throw new Error(`Não foi possível obter dados para o produto SKU ${sku}: ${error.message}`);
   }
 }
+
 
 app.get('/api/produto/:sku', async (req, res) => {
   const { sku } = req.params;
@@ -209,15 +221,18 @@ app.delete('/api/projetos/:nome', (req, res) => {
   }
 });
 
-app.use(express.static(path.join(__dirname, 'frontend')));
+// Servir arquivos estáticos do frontend
+app.use(express.static(path.join(__dirname, '../public')));
 
+// Rota para o frontend
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'frontend', 'index.html'));
+  res.sendFile(path.join(__dirname, '../public', 'index.html'));
 });
 
-app.listen(PORT, () => {
-  console.log(`Servidor rodando em http://localhost:${PORT}`);
-});
-
+if (!isVercel) {
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Servidor rodando em http://localhost:${PORT}`);
+  });
+}
 
 module.exports = app;
