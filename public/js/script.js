@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const skusContainer = document.getElementById('skus-container');
   const adicionarSkuBtn = document.getElementById('adicionar-sku');
   
-  // Constantes globais (removidas as declarações duplicadas)
+  // Constantes globais
   const VALID_SKUS = ['9737', '72829', '5465'];
   const PRODUCT_FALLBACK = {
     '9737': { 
@@ -35,6 +35,7 @@ document.addEventListener('DOMContentLoaded', function() {
     carregando: false
   };
 
+  // Função para mostrar alertas
   function showAlert(message, isSuccess = false) {
     const alert = document.createElement('div');
     alert.className = `alert ${isSuccess ? 'success' : ''}`;
@@ -57,6 +58,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 3000);
   }
 
+  // Atualiza os campos de SKU dinamicamente
   function atualizarCamposSKU() {
     let qtd = parseInt(quantidadeInput.value) || 1;
     qtd = Math.max(1, Math.min(qtd, 3));
@@ -91,6 +93,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
+  // Remove o fundo da imagem usando a API Remove.bg
   async function removeImageBackground(imageDataUrl) {
     try {
       const blob = await (await fetch(imageDataUrl)).blob();
@@ -121,6 +124,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
+  // Comprime a imagem para otimização
   async function compressImage(file, maxWidth = 800, quality = 0.8) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -146,6 +150,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
+  // Processa a imagem (compressão + remoção de fundo)
   async function processImage(file) {
     try {
       const compressedImage = await compressImage(file);
@@ -157,6 +162,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
+  // Formata o preço para o padrão numérico
   function formatPrice(price) {
     if (typeof price === 'number') {
       return price.toFixed(2);
@@ -170,6 +176,7 @@ document.addEventListener('DOMContentLoaded', function() {
     return '0.00';
   }
 
+  // Busca os dados do produto com tentativas de retry
   async function fetchProductWithRetry(sku, retries = 3) {
     for (let attempt = 1; attempt <= retries; attempt++) {
       try {
@@ -220,6 +227,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
+  // Event listeners
   quantidadeInput.addEventListener('input', atualizarCamposSKU);
   quantidadeInput.addEventListener('change', function() {
     if (this.value < 1) this.value = 1;
@@ -227,6 +235,7 @@ document.addEventListener('DOMContentLoaded', function() {
     atualizarCamposSKU();
   });
 
+  // Handler para o botão de adicionar SKU
   adicionarSkuBtn.addEventListener('click', async function() {
     if (estado.carregando) return;
     
@@ -279,6 +288,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       }
 
+      // Envio dos dados para a API com tratamento de erro melhorado
       const response = await fetch(`${API_URL}/projetos`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -288,9 +298,22 @@ document.addEventListener('DOMContentLoaded', function() {
         })
       });
 
+      let responseData;
+      try {
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          responseData = await response.json();
+        } else {
+          const text = await response.text();
+          throw new Error(text || 'Erro desconhecido ao salvar projeto');
+        }
+      } catch (error) {
+        console.error('Erro ao analisar resposta:', error);
+        throw new Error('Resposta inválida do servidor');
+      }
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Erro ao salvar projeto');
+        throw new Error(responseData?.error || 'Erro ao salvar projeto');
       }
 
       showAlert('Produtos adicionados com sucesso!', true);
@@ -307,6 +330,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
   
+  // Handler para upload de imagens
   skusContainer.addEventListener('change', async function(e) {
     if (e.target.classList.contains('produto-imagem') && e.target.files[0]) {
       const file = e.target.files[0];
@@ -338,6 +362,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
+  // Inicialização
   document.getElementById('ano').textContent = new Date().getFullYear();
   atualizarCamposSKU();
 });
