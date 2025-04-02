@@ -1,19 +1,14 @@
 # Backend
-backend/.env
-backend/uploads/*
-!backend/uploads/.gitkeep
-backend/node_modules/
-backend/package-lock.json
+api/.env
+api/node_modules/
+api/package-lock.json
 
 # Frontend
-frontend/dist/
-frontend/node_modules/
-frontend/package-lock.json
+public/node_modules/
 
 # Sistema
 .DS_Store
 *.log
-*.env
 .idea/
 .vscode/
 *.tmp

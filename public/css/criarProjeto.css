@@ -1,0 +1,145 @@
+/* criarProjeto.css - Estilos específicos para a página de criação de projetos */
+
+.form-group {
+    margin-bottom: 25px;
+    text-align: left;
+  }
+  
+  label {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--primary-color);
+    font-weight: bold;
+    font-size: 16px;
+  }
+  
+  input {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid var(--medium-gray);
+    border-radius: 6px;
+    font-size: 16px;
+    transition: var(--transition);
+  }
+  
+  input:focus {
+    border-color: var(--azul-botao);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(30, 136, 229, 0.2), 
+                0 2px 8px rgba(30, 136, 229, 0.1);
+  }
+  
+  .sku-group {
+    border: 1px solid var(--medium-gray);
+    padding: 15px;
+    border-radius: 6px;
+    margin-bottom: 15px;
+    background-color: #f9f9f9;
+    transition: var(--transition);
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .sku-group::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background-color: var(--primary-color);
+    transition: var(--transition);
+  }
+  
+  .sku-group:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
+  }
+  
+  .sku-group:hover::before {
+    width: 6px;
+    background-color: var(--accent-color);
+  }
+  
+  .valid-skus {
+    background-color: rgba(76, 175, 80, 0.1);
+    padding: 10px;
+    border-radius: 4px;
+    margin-top: 10px;
+    font-size: 14px;
+    margin-bottom: 20px;
+  }
+  
+  .valid-skus span {
+    font-weight: bold;
+    color: var(--secondary-color);
+  }
+  
+  .imagem-container {
+    position: relative;
+    min-height: 50px;
+    margin-top: 10px;
+  }
+  
+  .loading-imagem {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: rgba(255,255,255,0.8);
+    padding: 5px;
+    font-size: 12px;
+    text-align: center;
+    color: var(--primary-color);
+  }
+  
+  .error-imagem {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: rgba(255,255,255,0.8);
+    padding: 5px;
+    font-size: 12px;
+    text-align: center;
+    color: var(--error-color);
+  }
+  
+  .imagem-preview {
+    max-width: 100px;
+    max-height: 100px;
+    border: 1px solid var(--medium-gray);
+    border-radius: 4px;
+    display: none;
+  }
+  
+  .tooltip {
+    position: relative;
+    display: inline-block;
+    margin-left: 8px;
+    cursor: pointer;
+  }
+  
+  .tooltip .tooltiptext {
+    visibility: hidden;
+    width: 200px;
+    background-color: var(--primary-color);
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px;
+    position: absolute;
+    z-index: 1;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 0;
+    transition: opacity 0.3s;
+    font-size: 12px;
+    font-weight: normal;
+  }
+  
+  .tooltip:hover .tooltiptext {
+    visibility: visible;
+    opacity: 1;
+  }

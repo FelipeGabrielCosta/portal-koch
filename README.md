@@ -1,12 +1,7 @@
 # Portal Koch - Sistema de Gerenciamento de Produtos
 
-![Logo Koch](dist/assets/logo-koch.png)
-
 ## 📋 Descrição
-Sistema para criação de animações com produtos do Supermercado Koch, incluindo:
-- Cadastro de produtos por SKU
-- Upload de imagens
-- Gerenciamento de projetos
+Sistema para criação de animações com produtos do Supermercado Koch.
 
 ## 🚀 Como Executar
 
@@ -14,8 +9,9 @@ Sistema para criação de animações com produtos do Supermercado Koch, incluin
 - Node.js 18+
 - npm 9+
 
-### Instalação
-1. Clone o repositório:
+### Instalação Local
 ```bash
 git clone https://github.com/seu-usuario/portal-koch.git
 cd portal-koch
+npm install
+cd api && npm install && cd ..

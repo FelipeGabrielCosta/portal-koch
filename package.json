@@ -1,0 +1,25 @@
+{
+  "name": "portal-koch",
+  "version": "1.0.0",
+  "description": "Portal de animações de produtos para Supermercado Koch",
+  "scripts": {
+    "start": "node api/routes.js",
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "node api/routes.js",
+    "client": "live-server public --port=3001",
+    "build": "echo 'Build não necessário para este projeto'",
+    "deploy": "vercel --prod",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "install-all": "npm install && cd api && npm install"
+  },
+  "dependencies": {
+    "concurrently": "^8.2.2",
+    "live-server": "^1.2.2"
+  },
+  "devDependencies": {
+    "vercel": "^33.1.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}

@@ -1,0 +1,295 @@
+body {
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: #f0f0f0;
+    font-family: 'Cera Round Pro', 'Helvetica', sans-serif;
+    overflow: hidden;
+}
+
+.container {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    max-width: 1500px;
+    max-height: 1000px;
+    aspect-ratio: 1500 / 1000;
+    background-color: #1a5094;
+    overflow: hidden;
+    margin: auto;
+    transform-style: preserve-3d; /* Melhora a renderização 3D */
+}
+
+.background {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-color: #1a5094;
+    z-index: 0;
+    backface-visibility: hidden;
+}
+
+.star-container {
+    position: absolute;
+    width: 60%;
+    height: 60%;
+    top: 50%;
+    left: 50%;
+    transform: translate3d(-50%, -50%, 0);
+    z-index: 3;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    perspective: 1000px;
+}
+
+.star {
+    width: auto;
+    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    object-position: center;
+    transform-style: preserve-3d;
+    will-change: transform;
+    backface-visibility: hidden;
+}
+
+.star2 {
+    position: absolute;
+    width: 55%;
+    height: 55%;
+    top: 58%;
+    left: 70%;
+    transform: translate3d(-50%, -50%, 0);
+    opacity: 0;
+    z-index: 3;
+    object-fit: contain;
+    background-color: transparent !important;
+    filter: drop-shadow(0 0 10px rgba(255, 50, 50, 0.7));
+    will-change: transform, opacity;
+    backface-visibility: hidden;
+}
+
+.yellow-rectangle {
+    position: absolute;
+    width: 95%;
+    height: 0;
+    background-color: #fcd302;
+    border-radius: 4vw;
+    top: 50%;
+    left: 50%;
+    transform: translate3d(-50%, -50%, 0);
+    opacity: 0;
+    z-index: 1;
+    box-shadow: 0 0 20px rgba(252, 211, 2, 0.5);
+    will-change: transform, opacity;
+    backface-visibility: hidden;
+}
+
+.product-description {
+    position: absolute;
+    top: 15%;
+    left: 50%;
+    transform: translate3d(-50%, 0, 0);
+    color: black;
+    font-weight: bold;
+    opacity: 0;
+    z-index: 5;
+    text-align: center;
+    width: 80%;
+    font-size: calc(0.06 * var(--yellow-height, 80vh));
+    line-height: 1.2;
+    display: flex;
+    justify-content: center;
+    margin: 0 auto;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
+    will-change: transform, opacity;
+    backface-visibility: hidden;
+    transform-style: preserve-3d;
+}
+
+.product-images-container {
+    position: absolute;
+    width: 60%;
+    height: 50%;
+    top: 58%;
+    left: 35%;
+    transform: translate3d(-50%, -50%, 0);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5%;
+    z-index: 3;
+    perspective: 1000px;
+}
+
+.product-image, .product-image2 {
+    object-fit: contain;
+    opacity: 0;
+    background-color: transparent !important;
+    align-self: center;
+    will-change: transform, opacity;
+    backface-visibility: hidden;
+    transform-style: preserve-3d;
+}
+
+.product-image {
+    height: 100%;
+    max-height: 100%;
+    aspect-ratio: 1/1;
+    z-index: 3;
+    transform: translate3d(0, 0, 0);
+}
+
+.product-image2 {
+    height: 90%;
+    aspect-ratio: 1/1;
+    z-index: 2;
+    transform: translate3d(0, 0, 0);
+}
+
+/* Elementos de preço com sincronia perfeita */
+.price-elements {
+    position: absolute;
+    top: 58%;
+    left: 70%;
+    transform: translate3d(-50%, -50%, 0);
+    z-index: 4;
+    opacity: 0;
+    display: flex;
+    align-items: baseline;
+    white-space: nowrap;
+    gap: 0.1vw;
+    will-change: transform, opacity;
+    backface-visibility: hidden;
+    transform-style: preserve-3d;
+}
+
+.currency, .value, .cents, .unit {
+    position: relative;
+    z-index: 5;
+    will-change: transform, opacity;
+    backface-visibility: hidden;
+    transform-style: preserve-3d;
+}
+
+.currency {
+    color: #fcd302;
+    font-size: calc(0.05 * var(--star2-width, 40vw));
+    transform: translate3d(0, -30%, 0);
+    margin-right: 0.2vw;
+}
+
+.value {
+    color: #fcd302;
+    font-size: calc(0.2 * var(--star2-width, 40vw));
+    font-weight: bold;
+    line-height: 0.9;
+    margin-right: 0.2vw;
+    transform: translate3d(0, 0, 0);
+}
+
+.cents {
+    color: #fcd302;
+    font-size: calc(0.09 * var(--star2-width, 40vw));
+    align-self: flex-end;
+    margin-bottom: 0.3vw;
+    line-height: 1;
+    transform: translate3d(0, 0, 0);
+}
+
+.unit {
+    color: #fcd302;
+    font-size: calc(0.05 * var(--star2-width, 40vw));
+    align-self: flex-end;
+    margin-bottom: 0.3vw;
+    line-height: 1;
+    margin-left: 0.5vw;
+    transform: translate3d(0, 0, 0);
+}
+
+/* Otimizações para animação fluida */
+[class*="product-"], 
+.star2, 
+.price-elements,
+.price-container > * {
+    transform-origin: center center;
+    will-change: transform, opacity;
+    backface-visibility: hidden;
+    transform-style: preserve-3d;
+}
+
+/* Media Queries para responsividade */
+@media (max-width: 768px) {
+    .product-description {
+        width: 85%;
+        -webkit-line-clamp: 3;
+        line-clamp: 3;
+        top: 12%;
+        font-size: calc(0.06 * var(--yellow-height, 80vh));
+    }
+    
+    .product-image, .product-image2 {
+        height: calc(0.40 * var(--yellow-height, 80vh));
+    }
+    
+    .price-elements {
+        flex-direction: column;
+        align-items: center;
+        top: 75%;
+        left: 70%;
+    }
+    
+    .currency, .value, .cents, .unit {
+        margin: 0.5vh 0;
+        transform: translate3d(0, 0, 0) !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .product-description {
+        width: 90%;
+        -webkit-line-clamp: 4;
+        line-clamp: 4;
+        top: 10%;
+        font-size: calc(0.07 * var(--yellow-height, 80vh));
+    }
+    
+    .product-images-container {
+        flex-direction: column;
+        gap: 2vh;
+    }
+    
+    .product-image, .product-image2 {
+        height: calc(0.35 * var(--yellow-height, 80vh));
+    }
+    
+    .price-elements {
+        top: 80%;
+        left: 50%;
+        width: 80%;
+    }
+}
+
+/* Classes de animação para sincronia perfeita */
+.sync-fade-out {
+    animation: syncFadeOut 0.5s forwards;
+}
+
+.sync-fade-in {
+    animation: syncFadeIn 0.75s forwards;
+}
+
+@keyframes syncFadeOut {
+    0% { opacity: 1; transform: translate3d(0, 0, 0); }
+    100% { opacity: 0; transform: translate3d(0, 30px, 0); }
+}
+
+@keyframes syncFadeIn {
+    0% { opacity: 0; transform: translate3d(0, 20px, 0) scale(0.98); }
+    100% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+}
