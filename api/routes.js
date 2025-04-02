@@ -17,17 +17,10 @@ const allowedOrigins = [
 ];
 
 const corsOptions = {
-  origin: function (origin, callback) {
-    if (!origin || allowedOrigins.some(allowed => 
-      origin === allowed || 
-      origin.startsWith(allowed.replace('*', '')) ||
-      origin.includes(allowed.replace('*', ''))
-    )) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+  origin: [
+    'https://portal-koch.vercel.app',
+    'http://localhost:3000'
+  ],
   methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true

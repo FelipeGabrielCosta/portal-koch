@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // Configuração dinâmica da URL da API
   const API_URL = window.location.hostname === 'localhost' 
   ? 'http://localhost:3000/api' 
-  : '/api';
+  : 'https://portal-koch.vercel.app'; // ou seu domínio na Vercel
   
   const REMOVE_BG_API_KEY = 'ZFuErdLpDeJEJwdD2NEk7JEp';
   const tituloInput = document.getElementById('titulo');
