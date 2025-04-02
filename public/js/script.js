@@ -1,8 +1,8 @@
 document.addEventListener('DOMContentLoaded', function() {
   // Configuração dinâmica da URL da API
-  const API_URL = window.location.hostname === 'localhost' 
-  ? 'http://localhost:3000/api' 
-  : 'https://portal-koch.vercel.app'; // ou seu domínio na Vercel
+  const API_URL = window.location.host.includes('vercel.app')
+  ? 'https://portal-koch.vercel.app/api' 
+  : 'http://localhost:3000/api';
   
   const REMOVE_BG_API_KEY = 'ZFuErdLpDeJEJwdD2NEk7JEp';
   const tituloInput = document.getElementById('titulo');
@@ -143,29 +143,20 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  async function fetchProductWithRetry(sku, retries = 3, delay = 1000) {
-    for (let i = 0; i < retries; i++) {
-      try {
-        const response = await fetch(`${API_URL}/produto/${sku}`);
-        
-        if (!response.ok) {
-          if (response.status === 404) {
-            throw new Error(`Produto com SKU ${sku} não encontrado`);
-          }
-          throw new Error(`HTTP error! status: ${response.status}`);
+  async function fetchProductWithRetry(sku, retries = 3) {
+    try {
+      const response = await fetch(`${API_URL}/produto/${sku}`, {
+        mode: 'cors', // Adicione esta linha
+        headers: {
+          'Content-Type': 'application/json'
         }
-        
-        const data = await response.json();
-        
-        if (!data.success) {
-          throw new Error(data.error || 'Erro desconhecido na API');
-        }
-        
-        return data.data;
-      } catch (error) {
-        if (i === retries - 1) throw error;
-        await new Promise(resolve => setTimeout(resolve, delay * (i + 1)));
-      }
+      });
+      
+      if (!response.ok) throw new Error('Produto não encontrado');
+      return await response.json();
+    } catch (error) {
+      console.error('Erro na requisição:', error);
+      throw error;
     }
   }
 

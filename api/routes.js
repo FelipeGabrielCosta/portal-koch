@@ -19,16 +19,19 @@ const allowedOrigins = [
 const corsOptions = {
   origin: [
     'https://portal-koch.vercel.app',
+    'https://portal-koch-*.vercel.app',
     'http://localhost:3000'
   ],
-  methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type'],
   credentials: true
 };
 
 app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
 
 // Configuração do caminho do arquivo de dados
 const DATA_FILE = process.env.VERCEL_ENV 
