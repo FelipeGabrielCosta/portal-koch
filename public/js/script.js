@@ -1,3 +1,4 @@
+//update
 document.addEventListener('DOMContentLoaded', function() {
   // Configuração dinâmica da URL da API
   const API_URL = window.location.host.includes('vercel.app')
