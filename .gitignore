@@ -5,26 +5,59 @@ api/package-lock.json
 
 # Frontend
 public/node_modules/
+public/package-lock.json
 
-# Sistema
+# Build artifacts
+dist/
+build/
+
+# Environment files
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# System files
 .DS_Store
-*.log
+Thumbs.db
+
+# IDE specific
 .idea/
 .vscode/
-*.tmp
-*.bak
 *.swp
 *.swo
 *.sublime-workspace
 *.sublime-project
+
+# Logs
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-.pnp*
-.pnp.js
+logs/
+
+# Temp files
+*.tmp
+*.bak
 *.pid
 *.seed
 *.pid.lock
 *.pem
 *.cache
 .tern-port
+
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# Debug files
+debug/
+*.pdb
+*.idb
+
+# Coverage directory
+coverage/
+
+# Production
+*.production

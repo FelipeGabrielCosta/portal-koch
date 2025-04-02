@@ -1,4 +1,3 @@
-//update
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
@@ -9,77 +8,53 @@ const { JSDOM } = require('jsdom');
 
 const app = express();
 
-// Configuração do CORS para produção/desenvolvimento
-const allowedOrigins = [
-  'https://portal-koch.vercel.app',
-  'https://portal-koch-*.vercel.app',
-  'http://localhost:3000',
-  'http://localhost:3001'
-];
+// Configuração para a Vercel
+const isVercel = process.env.VERCEL === '1';
+const PORT = process.env.PORT || 3000;
 
-const corsOptions = {
-  origin: function (origin, callback) {
-    if (!origin || allowedOrigins.some(allowed => 
-      origin === allowed || 
-      origin.includes(allowed.replace('*', '')))
-    ) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true,
-  optionsSuccessStatus: 200 // Para navegadores antigos
-};
+// Declaração única da variável DATA_FILE
+const DATA_FILE = (() => {
+  if (isVercel) {
+    return path.join('/tmp', 'data.json');
+  }
+  return path.join(__dirname, 'data.json');
+})();
 
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
-  res.header('Access-Control-Allow-Credentials', 'true');
-  next();
-});
-app.use(cors(corsOptions));
-app.options('*', cors(corsOptions));
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
-
-
-// Configuração do caminho do arquivo de dados
-const DATA_FILE = process.env.VERCEL_ENV 
-  ? '/tmp/data.json' 
-  : path.join(__dirname, 'data.json');
-
-// Garantir que o arquivo de dados exista
-if (!fs.existsSync(DATA_FILE)) {
+// Criar arquivo de dados se não existir
+if (isVercel && !fs.existsSync(DATA_FILE)) {
   fs.writeFileSync(DATA_FILE, JSON.stringify({}));
 }
 
 const PRODUCT_DATA_FALLBACK = {
-  '9737': { descricao: 'Detergente Ypê Clear Frasco 500ml', preco: '2,99' },
-  '72829': { descricao: 'Amaciante de Roupas Concentrado Downy Frescor da Primavera 1L', preco: '15,90' },
-  '5465': { descricao: 'Água Sanitária Ypê Frasco 2L', preco: '6,49' }
+  '9737': {
+    descricao: 'Detergente Ypê Clear Frasco 500ml',
+    preco: '2,99'
+  },
+  '72829': {
+    descricao: 'Amaciante de Roupas Concentrado Downy Frescor da Primavera 1L',
+    preco: '15,90'
+  },
+  '5465': {
+    descricao: 'Água Sanitária Ypê Frasco 2L',
+    preco: '6,49'
+  }
 };
 
 const PRODUCT_URLS = {
   '9737': 'https://www.superkoch.com.br/detergente-ype-clear-frasco-500ml-9737',
   '72829': 'https://www.superkoch.com.br/amaciante-de-roupas-concentrado-downy-frescor-da-primavera-1l-72829',
-  '5465': 'https://www.superkoch.com.br/agua-sanitaria-ype-frasco-2l-5465'
+  '5465': 'https://www.superkoch.com.br/agua-sanitaria-ype-frasco-2l-5465',
 };
 
 let projetos = {};
 
-// Carregar dados existentes
-try {
-  projetos = JSON.parse(fs.readFileSync(DATA_FILE));
-  console.log('Dados carregados do arquivo:', Object.keys(projetos));
-} catch (error) {
-  console.error('Erro ao carregar dados:', error);
-}
-
-// Função para salvar dados
-function saveData() {
-  fs.writeFileSync(DATA_FILE, JSON.stringify(projetos, null, 2));
+if (fs.existsSync(DATA_FILE)) {
+  try {
+    projetos = JSON.parse(fs.readFileSync(DATA_FILE));
+    console.log('Dados carregados do arquivo:', Object.keys(projetos));
+  } catch (error) {
+    console.error('Erro ao carregar dados:', error);
+  }
 }
 
 async function fetchProductData(sku) {
@@ -124,7 +99,6 @@ async function fetchProductData(sku) {
   }
 }
 
-// Rotas da API
 app.get('/api/produto/:sku', async (req, res) => {
   const { sku } = req.params;
   
@@ -137,9 +111,15 @@ app.get('/api/produto/:sku', async (req, res) => {
   
   try {
     const produto = await fetchProductData(sku);
-    res.json({ success: true, data: produto });
+    res.json({ 
+      success: true,
+      data: produto
+    });
   } catch (error) {
-    res.status(404).json({ success: false, error: error.message });
+    res.status(404).json({
+      success: false,
+      error: error.message
+    });
   }
 });
 
@@ -148,30 +128,35 @@ app.get('/api/projetos', (req, res) => {
 });
 
 app.post('/api/projetos', async (req, res) => {
+  const { nome, produtos } = req.body;
+  
+  if (!nome || !nome.trim()) {
+    return res.status(400).json({
+      success: false,
+      error: 'O nome do projeto é obrigatório'
+    });
+  }
+
+  if (!produtos || !Array.isArray(produtos) || produtos.length === 0) {
+    return res.status(400).json({
+      success: false,
+      error: 'A lista de produtos não pode estar vazia'
+    });
+  }
+
   try {
-    const { nome, produtos } = req.body;
-    
-    // Validações
-    if (!nome?.trim()) {
-      return res.status(400).json({ success: false, error: 'O nome do projeto é obrigatório' });
-    }
-
-    if (!Array.isArray(produtos) || produtos.length === 0) {
-      return res.status(400).json({ success: false, error: 'A lista de produtos não pode estar vazia' });
-    }
-
-    const produtosInvalidos = produtos.filter(p => 
-      !p.sku || !p.descricao || !p.preco || !p.imagem?.startsWith('data:image/png')
-    );
+    const produtosInvalidos = produtos.filter(p => {
+      if (!p.sku || !p.descricao || !p.preco || !p.imagem) return true;
+      if (!p.imagem.startsWith('data:image/png')) {
+        return true;
+      }
+      return false;
+    });
 
     if (produtosInvalidos.length > 0) {
-      return res.status(400).json({ 
-        success: false,
-        error: 'Todos os produtos devem ter SKU, descrição, preço e imagem PNG com fundo transparente'
-      });
+      throw new Error('Todos os produtos devem ter SKU, descrição, preço e imagem PNG com fundo transparente');
     }
 
-    // Salvar projeto
     projetos[nome] = {
       produtos: produtos.map(p => ({
         sku: p.sku,
@@ -184,47 +169,55 @@ app.post('/api/projetos', async (req, res) => {
       ultimaAtualizacao: new Date().toISOString()
     };
 
-    saveData();
+    fs.writeFileSync(DATA_FILE, JSON.stringify(projetos, null, 2));
     
-    res.json({ success: true, data: projetos[nome] });
+    res.json({
+      success: true,
+      data: projetos[nome]
+    });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
   }
 });
 
 app.delete('/api/projetos/:nome', (req, res) => {
+  const { nome } = req.params;
+
+  if (!projetos[nome]) {
+    return res.status(404).json({
+      success: false,
+      error: 'Projeto não encontrado'
+    });
+  }
+
   try {
-    const { nome } = req.params;
-
-    if (!projetos[nome]) {
-      return res.status(404).json({ success: false, error: 'Projeto não encontrado' });
-    }
-
     delete projetos[nome];
-    saveData();
+    fs.writeFileSync(DATA_FILE, JSON.stringify(projetos, null, 2));
     
-    res.json({ success: true, message: `Projeto "${nome}" excluído com sucesso` });
+    res.json({
+      success: true,
+      message: `Projeto "${nome}" excluído com sucesso`
+    });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
   }
 });
 
-// Servir arquivos estáticos na Vercel
-if (process.env.VERCEL_ENV) {
-  app.use(express.static(path.join(__dirname, '../public')));
-  
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/index.html'));
-  });
-}
+app.use(express.static(path.join(__dirname, 'frontend')));
 
-// Exportar o app para a Vercel
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'frontend', 'index.html'));
+});
+
+app.listen(PORT, () => {
+  console.log(`Servidor rodando em http://localhost:${PORT}`);
+});
+
+
 module.exports = app;
-
-// Iniciar servidor local se não estiver na Vercel
-if (!process.env.VERCEL_ENV) {
-  const PORT = process.env.PORT || 3000;
-  app.listen(PORT, () => {
-    console.log(`Servidor rodando em http://localhost:${PORT}`);
-  });
-}

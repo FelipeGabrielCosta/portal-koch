@@ -1,7 +1,5 @@
 document.addEventListener('DOMContentLoaded', async () => {
-  const API_URL = window.location.hostname === 'localhost' 
-  ? 'http://localhost:3000' 
-  : '';
+  const API_URL = 'http://localhost:3000';
   const listaProjetos = document.getElementById('lista-projetos');
   const loadingMessage = document.getElementById('loading-message');
   const noProjectsMessage = document.getElementById('no-projects-message');

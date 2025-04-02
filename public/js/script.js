@@ -1,41 +1,18 @@
 document.addEventListener('DOMContentLoaded', function() {
-  // Configuração dinâmica da URL da API
-  const API_URL = window.location.host.includes('vercel.app')
-    ? 'https://portal-koch.vercel.app/api' 
-    : 'http://localhost:3000/api';
-  
+  const API_URL = 'http://localhost:3000';
   const REMOVE_BG_API_KEY = 'ZFuErdLpDeJEJwdD2NEk7JEp';
   const tituloInput = document.getElementById('titulo');
   const quantidadeInput = document.getElementById('quantidade');
   const skusContainer = document.getElementById('skus-container');
   const adicionarSkuBtn = document.getElementById('adicionar-sku');
   
-  // Constantes globais
   const VALID_SKUS = ['9737', '72829', '5465'];
-  const PRODUCT_FALLBACK = {
-    '9737': { 
-      sku: '9737',
-      descricao: 'Detergente Ypê Clear 500ml', 
-      preco: '2.99' 
-    },
-    '72829': { 
-      sku: '72829',
-      descricao: 'Amaciante Downy 1L', 
-      preco: '15.90' 
-    },
-    '5465': { 
-      sku: '5465',
-      descricao: 'Água Sanitária Ypê 2L', 
-      preco: '6.49' 
-    }
-  };
   
   const estado = {
     produtos: [],
     carregando: false
   };
 
-  // Função para mostrar alertas
   function showAlert(message, isSuccess = false) {
     const alert = document.createElement('div');
     alert.className = `alert ${isSuccess ? 'success' : ''}`;
@@ -58,7 +35,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 3000);
   }
 
-  // Atualiza os campos de SKU dinamicamente
   function atualizarCamposSKU() {
     let qtd = parseInt(quantidadeInput.value) || 1;
     qtd = Math.max(1, Math.min(qtd, 3));
@@ -93,7 +69,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  // Remove o fundo da imagem usando a API Remove.bg
   async function removeImageBackground(imageDataUrl) {
     try {
       const blob = await (await fetch(imageDataUrl)).blob();
@@ -124,7 +99,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  // Comprime a imagem para otimização
   async function compressImage(file, maxWidth = 800, quality = 0.8) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -150,11 +124,14 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  // Processa a imagem (compressão + remoção de fundo)
   async function processImage(file) {
     try {
+      // 1. Comprimir imagem
       const compressedImage = await compressImage(file);
+      
+      // 2. Remover fundo
       const imageWithoutBg = await removeImageBackground(compressedImage);
+      
       return imageWithoutBg;
     } catch (error) {
       console.error('Erro no processamento da imagem:', error);
@@ -162,72 +139,32 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  // Formata o preço para o padrão numérico
-  function formatPrice(price) {
-    if (typeof price === 'number') {
-      return price.toFixed(2);
-    }
-    
-    if (typeof price === 'string') {
-      const cleaned = price.replace(/[^\d,.]/g, '');
-      return cleaned.replace(',', '.');
-    }
-    
-    return '0.00';
-  }
-
-  // Busca os dados do produto com tentativas de retry
-  async function fetchProductWithRetry(sku, retries = 3) {
-    for (let attempt = 1; attempt <= retries; attempt++) {
+  async function fetchProductWithRetry(sku, retries = 3, delay = 1000) {
+    for (let i = 0; i < retries; i++) {
       try {
-        console.log(`Tentativa ${attempt} para SKU ${sku}`);
-        const response = await fetch(`${API_URL}/produto/${sku}`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          }
-        });
-
+        const response = await fetch(`${API_URL}/api/produto/${sku}`);
+        
         if (!response.ok) {
-          console.warn(`Resposta não-OK para SKU ${sku}: ${response.status}`);
-          throw new Error(`HTTP status ${response.status}`);
+          if (response.status === 404) {
+            throw new Error(`Produto com SKU ${sku} não encontrado`);
+          }
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
-
+        
         const data = await response.json();
         
-        if (!data || !data.success || !data.data || typeof data.data.preco === 'undefined') {
-          console.warn('Dados incompletos da API, usando fallback', data);
-          throw new Error('Dados incompletos da API');
+        if (!data.success) {
+          throw new Error(data.error || 'Erro desconhecido na API');
         }
-
-        return {
-          success: true,
-          data: {
-            sku: data.data.sku || sku,
-            descricao: data.data.descricao || PRODUCT_FALLBACK[sku]?.descricao || 'Produto não encontrado',
-            preco: formatPrice(data.data.preco) || PRODUCT_FALLBACK[sku]?.preco || '0.00'
-          }
-        };
-
+        
+        return data.data;
       } catch (error) {
-        console.warn(`Tentativa ${attempt} falhou:`, error);
-        if (attempt === retries) {
-          console.log('Usando fallback para SKU:', sku);
-          if (PRODUCT_FALLBACK[sku]) {
-            return {
-              success: true,
-              data: PRODUCT_FALLBACK[sku]
-            };
-          }
-          throw error;
-        }
-        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+        if (i === retries - 1) throw error;
+        await new Promise(resolve => setTimeout(resolve, delay * (i + 1)));
       }
     }
   }
 
-  // Event listeners
   quantidadeInput.addEventListener('input', atualizarCamposSKU);
   quantidadeInput.addEventListener('change', function() {
     if (this.value < 1) this.value = 1;
@@ -235,7 +172,6 @@ document.addEventListener('DOMContentLoaded', function() {
     atualizarCamposSKU();
   });
 
-  // Handler para o botão de adicionar SKU
   adicionarSkuBtn.addEventListener('click', async function() {
     if (estado.carregando) return;
     
@@ -273,9 +209,9 @@ document.addEventListener('DOMContentLoaded', function() {
           const imagemProcessada = await processImage(imagemInput.files[0]);
           
           productsData.push({
-            sku: produto.data.sku,
-            descricao: produto.data.descricao,
-            preco: produto.data.preco,
+            sku: produto.sku,
+            descricao: produto.descricao,
+            preco: produto.preco.replace(/[^\d,]/g, '').replace(',', '.'), // Garante formato numérico
             imagem: imagemProcessada,
             unidade: "UNID."
           });
@@ -288,8 +224,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       }
 
-      // Envio dos dados para a API com tratamento de erro melhorado
-      const response = await fetch(`${API_URL}/projetos`, {
+      const response = await fetch(`${API_URL}/api/projetos`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -297,41 +232,16 @@ document.addEventListener('DOMContentLoaded', function() {
           produtos: productsData 
         })
       });
-  
-      let responseData;
-      try {
-        // Verifica se a resposta é JSON válido
-        const textResponse = await response.text();
-        try {
-          responseData = textResponse ? JSON.parse(textResponse) : {};
-        } catch (e) {
-          console.warn('A resposta não é JSON válido:', textResponse);
-          throw new Error(textResponse || 'Resposta inválida do servidor');
-        }
-  
-        // Verifica se a API retornou um erro conhecido
-        if (!response.ok) {
-          const errorMsg = responseData.error || 
-                          responseData.message || 
-                          `Erro HTTP ${response.status}`;
-          throw new Error(errorMsg);
-        }
-  
-        // Se chegou aqui, a resposta é válida
-        showAlert('Produtos adicionados com sucesso!', true);
-        setTimeout(() => {
-          window.location.href = 'verProjetos.html';
-        }, 1500);
-  
-      } catch (error) {
-        console.error('Erro ao processar resposta:', {
-          status: response.status,
-          statusText: response.statusText,
-          error: error.message
-        });
-        throw new Error(`Falha ao salvar projeto: ${error.message}`);
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erro ao salvar projeto');
       }
-  
+
+      showAlert('Produtos adicionados com sucesso!', true);
+      setTimeout(() => {
+        window.location.href = 'verProjetos.html';
+      }, 1500);
     } catch (error) {
       console.error('Erro:', error);
       showAlert(`Erro: ${error.message}`);
@@ -341,8 +251,7 @@ document.addEventListener('DOMContentLoaded', function() {
       adicionarSkuBtn.innerHTML = '<i class="fas fa-plus-circle"></i> Adicionar Produto';
     }
   });
-  
-  // Handler para upload de imagens
+
   skusContainer.addEventListener('change', async function(e) {
     if (e.target.classList.contains('produto-imagem') && e.target.files[0]) {
       const file = e.target.files[0];
@@ -374,7 +283,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
-  // Inicialização
   document.getElementById('ano').textContent = new Date().getFullYear();
   atualizarCamposSKU();
 });
