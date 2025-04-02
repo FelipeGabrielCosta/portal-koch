@@ -1,22 +1,34 @@
-//update
 document.addEventListener('DOMContentLoaded', function() {
   // Configuração dinâmica da URL da API
   const API_URL = window.location.host.includes('vercel.app')
-  ? 'https://portal-koch.vercel.app/api' 
-  : 'http://localhost:3000/api';
+    ? 'https://portal-koch.vercel.app/api' 
+    : 'http://localhost:3000/api';
   
   const REMOVE_BG_API_KEY = 'ZFuErdLpDeJEJwdD2NEk7JEp';
   const tituloInput = document.getElementById('titulo');
   const quantidadeInput = document.getElementById('quantidade');
   const skusContainer = document.getElementById('skus-container');
   const adicionarSkuBtn = document.getElementById('adicionar-sku');
-  const PRODUCT_FALLBACK = {
-    '9737': { descricao: 'Detergente Ypê Clear 500ml', preco: '2,99' },
-    '72829': { descricao: 'Amaciante Downy 1L', preco: '15,90' },
-    '5465': { descricao: 'Água Sanitária Ypê 2L', preco: '6,49' }
-  };
   
+  // Constantes globais (removidas as declarações duplicadas)
   const VALID_SKUS = ['9737', '72829', '5465'];
+  const PRODUCT_FALLBACK = {
+    '9737': { 
+      sku: '9737',
+      descricao: 'Detergente Ypê Clear 500ml', 
+      preco: '2.99' 
+    },
+    '72829': { 
+      sku: '72829',
+      descricao: 'Amaciante Downy 1L', 
+      preco: '15.90' 
+    },
+    '5465': { 
+      sku: '5465',
+      descricao: 'Água Sanitária Ypê 2L', 
+      preco: '6.49' 
+    }
+  };
   
   const estado = {
     produtos: [],
@@ -136,12 +148,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
   async function processImage(file) {
     try {
-      // 1. Comprimir imagem
       const compressedImage = await compressImage(file);
-      
-      // 2. Remover fundo
       const imageWithoutBg = await removeImageBackground(compressedImage);
-      
       return imageWithoutBg;
     } catch (error) {
       console.error('Erro no processamento da imagem:', error);
@@ -149,9 +157,23 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
+  function formatPrice(price) {
+    if (typeof price === 'number') {
+      return price.toFixed(2);
+    }
+    
+    if (typeof price === 'string') {
+      const cleaned = price.replace(/[^\d,.]/g, '');
+      return cleaned.replace(',', '.');
+    }
+    
+    return '0.00';
+  }
+
   async function fetchProductWithRetry(sku, retries = 3) {
-    for (let i = 0; i < retries; i++) {
+    for (let attempt = 1; attempt <= retries; attempt++) {
       try {
+        console.log(`Tentativa ${attempt} para SKU ${sku}`);
         const response = await fetch(`${API_URL}/produto/${sku}`, {
           method: 'GET',
           headers: {
@@ -159,40 +181,41 @@ document.addEventListener('DOMContentLoaded', function() {
             'Accept': 'application/json'
           }
         });
-  
+
         if (!response.ok) {
-          // Se a resposta for 404, usa o fallback
-          if (response.status === 404) {
-            return { 
-              success: true, 
-              data: { 
-                sku, 
-                descricao: PRODUCT_FALLBACK[sku].descricao, 
-                preco: PRODUCT_FALLBACK[sku].preco 
-              } 
-            };
-          }
-          throw new Error(`HTTP error! status: ${response.status}`);
+          console.warn(`Resposta não-OK para SKU ${sku}: ${response.status}`);
+          throw new Error(`HTTP status ${response.status}`);
         }
-  
-        return await response.json();
+
+        const data = await response.json();
+        
+        if (!data || !data.success || !data.data || typeof data.data.preco === 'undefined') {
+          console.warn('Dados incompletos da API, usando fallback', data);
+          throw new Error('Dados incompletos da API');
+        }
+
+        return {
+          success: true,
+          data: {
+            sku: data.data.sku || sku,
+            descricao: data.data.descricao || PRODUCT_FALLBACK[sku]?.descricao || 'Produto não encontrado',
+            preco: formatPrice(data.data.preco) || PRODUCT_FALLBACK[sku]?.preco || '0.00'
+          }
+        };
+
       } catch (error) {
-        console.warn(`Tentativa ${i + 1} falhou para SKU ${sku}:`, error);
-        if (i === retries - 1) {
-          // Última tentativa - usa fallback
+        console.warn(`Tentativa ${attempt} falhou:`, error);
+        if (attempt === retries) {
+          console.log('Usando fallback para SKU:', sku);
           if (PRODUCT_FALLBACK[sku]) {
-            return { 
-              success: true, 
-              data: { 
-                sku, 
-                ...PRODUCT_FALLBACK[sku] 
-              } 
+            return {
+              success: true,
+              data: PRODUCT_FALLBACK[sku]
             };
           }
           throw error;
         }
-        // Espera antes de tentar novamente
-        await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
       }
     }
   }
@@ -241,9 +264,9 @@ document.addEventListener('DOMContentLoaded', function() {
           const imagemProcessada = await processImage(imagemInput.files[0]);
           
           productsData.push({
-            sku: produto.sku,
-            descricao: produto.descricao,
-            preco: produto.preco.replace(/[^\d,]/g, '').replace(',', '.'), // Garante formato numérico
+            sku: produto.data.sku,
+            descricao: produto.data.descricao,
+            preco: produto.data.preco,
             imagem: imagemProcessada,
             unidade: "UNID."
           });
