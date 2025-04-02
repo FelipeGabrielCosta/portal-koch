@@ -297,29 +297,41 @@ document.addEventListener('DOMContentLoaded', function() {
           produtos: productsData 
         })
       });
-
+  
       let responseData;
       try {
-        const contentType = response.headers.get('content-type');
-        if (contentType && contentType.includes('application/json')) {
-          responseData = await response.json();
-        } else {
-          const text = await response.text();
-          throw new Error(text || 'Erro desconhecido ao salvar projeto');
+        // Verifica se a resposta é JSON válido
+        const textResponse = await response.text();
+        try {
+          responseData = textResponse ? JSON.parse(textResponse) : {};
+        } catch (e) {
+          console.warn('A resposta não é JSON válido:', textResponse);
+          throw new Error(textResponse || 'Resposta inválida do servidor');
         }
+  
+        // Verifica se a API retornou um erro conhecido
+        if (!response.ok) {
+          const errorMsg = responseData.error || 
+                          responseData.message || 
+                          `Erro HTTP ${response.status}`;
+          throw new Error(errorMsg);
+        }
+  
+        // Se chegou aqui, a resposta é válida
+        showAlert('Produtos adicionados com sucesso!', true);
+        setTimeout(() => {
+          window.location.href = 'verProjetos.html';
+        }, 1500);
+  
       } catch (error) {
-        console.error('Erro ao analisar resposta:', error);
-        throw new Error('Resposta inválida do servidor');
+        console.error('Erro ao processar resposta:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: error.message
+        });
+        throw new Error(`Falha ao salvar projeto: ${error.message}`);
       }
-
-      if (!response.ok) {
-        throw new Error(responseData?.error || 'Erro ao salvar projeto');
-      }
-
-      showAlert('Produtos adicionados com sucesso!', true);
-      setTimeout(() => {
-        window.location.href = 'verProjetos.html';
-      }, 1500);
+  
     } catch (error) {
       console.error('Erro:', error);
       showAlert(`Erro: ${error.message}`);
